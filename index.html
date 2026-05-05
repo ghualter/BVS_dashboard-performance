@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Gestión Comercial — Walter Cedrón | BVS I&C</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --bg2: #eef0f6;
+    --surface: #ffffff;
+    --surface2: #f8f9fc;
+    --border: #e2e6f0;
+    --border2: #d0d6e8;
+    --accent: #1a56db;
+    --accent-light: #e8effe;
+    --ok: #0e7c5a;
+    --ok-light: #d1fae5;
+    --danger: #c0392b;
+    --danger-light: #fde8e8;
+    --warn: #b45309;
+    --warn-light: #fef3c7;
+    --text: #1a202c;
+    --text2: #4a5568;
+    --text3: #a0aec0;
+    --cisco: #0067a0;
+    --hpe: #00735a;
+    --bvs: #c0392b;
+    --shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+    --shadow-hover: 0 4px 16px rgba(0,0,0,.10);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+  }
+
+  .logo-bar {
+    width: 4px; height: 22px;
+    background: var(--bvs);
+    border-radius: 2px;
+  }
+
+  .header-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .data-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ok-light);
+    border: 1px solid #a7f3d0;
+    padding: 4px 10px;
+    border-radius: 20px;
+    color: var(--ok);
+    font-weight: 500;
+  }
+
+  .pulse {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ok);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    gap: 0;
+  }
+
+  .tab {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    padding: 14px 18px;
+    cursor: pointer;
+    color: var(--text2);
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+  }
+
+  .tab:hover { color: var(--accent); background: var(--accent-light); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── MAIN ── */
+  main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn .25s ease; }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .section-sub {
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 24px;
+  }
+
+  /* ── GRIDS ── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 16px; }
+
+  /* ── KPI CARD ── */
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: box-shadow .2s, transform .2s;
+  }
+
+  .kpi-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+
+  .kpi-card::after {
+    content:'';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 10px 0 0 10px;
+  }
+
+  .kpi-card.ok::after { background: var(--ok); }
+  .kpi-card.warn::after { background: var(--warn); }
+  .kpi-card.danger::after { background: var(--danger); }
+  .kpi-card.neutral::after { background: var(--accent); }
+
+  .kpi-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    padding-left: 2px;
+  }
+
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-value.danger { color: var(--danger); }
+  .kpi-value.warn { color: var(--warn); }
+  .kpi-value.ok { color: var(--ok); }
+  .kpi-value.neutral { color: var(--accent); }
+  .kpi-value.dark { color: var(--text); }
+
+  .kpi-obj {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .kpi-obj span { color: var(--text2); }
+
+  .kpi-delta {
+    position: absolute;
+    top: 18px; right: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .kpi-delta.down { background: var(--danger-light); color: var(--danger); }
+  .kpi-delta.up { background: var(--ok-light); color: var(--ok); }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: var(--text2);
+    width: 200px;
+    flex-shrink: 0;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  .progress-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  /* ── TABLE ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text3);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+    background: var(--bg2);
+  }
+
+  .data-table th:first-child { border-radius: 6px 0 0 0; }
+  .data-table th:last-child { border-radius: 0 6px 0 0; }
+
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--accent-light); }
+
+  /* ── FCST BADGE ── */
+  .fcst {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .fcst.commit { background: var(--ok-light); color: var(--ok); }
+  .fcst.strong { background: var(--accent-light); color: var(--accent); }
+  .fcst.upside { background: var(--warn-light); color: var(--warn); }
+
+  /* ── VENDOR PILL ── */
+  .vendor {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .vendor.cisco { background: #e0f0fa; color: var(--cisco); }
+  .vendor.hpe { background: #d4f5ed; color: var(--hpe); }
+  .vendor.other { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
+
+  /* ── SEMÁFORO ── */
+  .semaforo {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .semaforo.alerta { background: var(--danger); }
+  .semaforo.tiempo { background: var(--ok); }
+
+  /* ── SUMMARY ── */
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-key { font-size: 12px; color: var(--text2); }
+  .summary-val { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+
+  /* ── ALERT ── */
+  .alert-box {
+    background: var(--danger-light);
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--text2);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .alert-icon { color: var(--danger); font-size: 14px; flex-shrink: 0; }
+
+  /* ── SCOREBOARD ── */
+  .scoreboard-row {
+    display: grid;
+    grid-template-columns: 180px 110px 110px 80px 110px 110px 110px 90px;
+    gap: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .scoreboard-row.header {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    background: var(--bg2);
+    border-radius: 6px 6px 0 0;
+  }
+  .scoreboard-row:hover:not(.header) { background: var(--accent-light); }
+  .s-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); }
+  .s-pct { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+
+  /* ── CHART ── */
+  .chart-wrap { position: relative; height: 200px; }
+  .chart-wrap-lg { position: relative; height: 250px; }
+
+  .divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+  /* ── STAT MINI ── */
+  .stat-mini {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-mini-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .stat-mini-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+  }
+  .stat-mini-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 3px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-bar"></div>
+    BVS <span style="color:var(--text2);font-weight:400;margin-left:4px">Gestión Comercial</span>
+  </div>
+  <div class="header-meta">
+    <span style="color:var(--text)">Walter Cedrón Zárate</span>
+    <span style="color:var(--border2)">|</span>
+    <span>Territorio I&C · Andina</span>
+    <span style="color:var(--border2)">|</span>
+    <div class="data-badge">
+      <div class="pulse"></div>
+      <span id="fecha-actual"></span>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" onclick="showPage('kpis',this)">KPI's AMs</div>
+  <div class="tab" onclick="showPage('resumen',this)">Resumen</div>
+  <div class="tab" onclick="showPage('funnel',this)">Funnel</div>
+  <div class="tab" onclick="showPage('mix',this)">Mix Tecnológico</div>
+  <div class="tab" onclick="showPage('booking',this)">Booking</div>
+  <div class="tab" onclick="showPage('scoreboard',this)">Scoreboard</div>
+  <div class="tab" onclick="showPage('pipeline',this)">Pipeline Detalle</div>
+</nav>
+
+<main>
+
+<!-- KPIs -->
+<div class="page active" id="page-kpis">
+  <div class="section-title">KPI's — Cumplimiento AMs</div>
+  <div class="section-sub">Semana 18 · Q2 2026 · Cuota Anual: $3,000,000 USD</div>
+
+  <div class="grid-4">
+    <div class="kpi-card danger">
+      <div class="kpi-label">Cobertura Territorio Q</div>
+      <div class="kpi-value danger">19%</div>
+      <div class="kpi-obj">Obj. Q: <span>≥ 90% cubierto</span></div>
+      <div class="kpi-delta down">▼ vs obj</div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="kpi-label">Cobertura Pipeline</div>
+      <div class="kpi-value warn">2.0x</div>
+      <div class="kpi-obj">Obj.: <span>≥ 4x cuota</span></div>
+      <div class="kpi-delta down">▼ vs obj</div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-label">Ventas vs. Cuota</div>
+      <div class="kpi-value danger">14%</div>
+      <div class="kpi-obj">Obj. Q: <span>≥ 90%</span></div>
+      <div class="kpi-delta down">▼ 76pp</div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-label">Win Rate YTD</div>
+      <div class="kpi-value danger">16.8%</div>
+      <div class="kpi-obj">Obj.: <span>≥ 25%</span></div>
+      <div class="kpi-delta down">▼ 8pp</div>
+    </div>
+  </div>
+
+  <div class="grid-4">
+    <div class="kpi-card neutral">
+      <div class="kpi-label">BKG Promedio TKT</div>
+      <div class="kpi-value dark" style="font-size:24px">$14.77K</div>
+      <div class="kpi-obj">Pipeline TKT: <span>$52.66K</span></div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-label">Ops. Nuevas M. Act.</div>
+      <div class="kpi-value danger">1</div>
+      <div class="kpi-obj">Obj. M: <span>≥ 10 ops</span></div>
+      <div class="kpi-delta down">▼ vs obj</div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="kpi-label">Mix Cisco Pipeline</div>
+      <div class="kpi-value warn">53%</div>
+      <div class="kpi-obj">Meta BVS: <span>80%</span></div>
+      <div class="kpi-delta down">▼ 27pp</div>
+    </div>
+    <div class="kpi-card neutral">
+      <div class="kpi-label">Pipeline Total Abierto</div>
+      <div class="kpi-value dark" style="font-size:24px">$5.2M</div>
+      <div class="kpi-obj">54 oportunidades abiertas</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Semáforo de KPIs <span class="panel-badge">04/05/2026</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="progress-row">
+        <div class="progress-label">Booking vs Cuota FY</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:14%;background:var(--danger)"></div></div>
+        <div class="progress-val" style="color:var(--danger)">14% / 90%</div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">Pipeline Coverage (x cuota)</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:50%;background:var(--warn)"></div></div>
+        <div class="progress-val" style="color:var(--warn)">2.0x / 4x</div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">Win Rate YTD</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:67%;background:var(--warn)"></div></div>
+        <div class="progress-val" style="color:var(--warn)">16.8% / 25%</div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">Cobertura Territorio Q</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:19%;background:var(--danger)"></div></div>
+        <div class="progress-val" style="color:var(--danger)">19% / 90%</div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">Mix Cisco Pipeline</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:66%;background:var(--warn)"></div></div>
+        <div class="progress-val" style="color:var(--warn)">53% / 80%</div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">Ops. Nuevas vs Obj. Mensual</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--danger)"></div></div>
+        <div class="progress-val" style="color:var(--danger)">1 / 10</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESUMEN -->
+<div class="page" id="page-resumen">
+  <div class="section-title">KPI's — Performance Comercial</div>
+  <div class="section-sub">Resumen ejecutivo · Q2 2026</div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Pipeline <span class="panel-badge">Monto Abierto YTD</span></div>
+      <div style="font-family:'Syne',sans-serif;font-size:38px;font-weight:800;letter-spacing:-2px;margin-bottom:16px;color:var(--accent)">$5.2M</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="stat-mini">
+          <div class="stat-mini-label">Commit</div>
+          <div class="stat-mini-val" style="color:var(--ok)">$845K</div>
+          <div class="stat-mini-sub">16.2%</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-label">Strong Upside</div>
+          <div class="stat-mini-val" style="color:var(--accent)">$2.22M</div>
+          <div class="stat-mini-sub">42.4%</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-label">Upside</div>
+          <div class="stat-mini-val" style="color:var(--warn)">$2.17M</div>
+          <div class="stat-mini-sub">41.4%</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--text2)">Coverage total: <strong>$89.8M</strong></span>
+        <span style="color:var(--text2)">Cobertura: <strong style="color:var(--warn)">2.0x</strong> cuota</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Booking 2026 <span class="panel-badge">Facturación Cerrada</span></div>
+      <div style="font-family:'Syne',sans-serif;font-size:38px;font-weight:800;letter-spacing:-2px;margin-bottom:4px;color:var(--warn)">$413K</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">de $3,000,000 cuota anual</div>
+      <div class="progress-bar" style="height:12px;margin-bottom:16px;border-radius:6px">
+        <div class="progress-fill" style="width:14%;background:linear-gradient(90deg,var(--danger),var(--warn));border-radius:6px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="stat-mini">
+          <div class="stat-mini-label">TKT Promedio</div>
+          <div class="stat-mini-val">$14.77K</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-label">GAP vs Cuota</div>
+          <div class="stat-mini-val" style="color:var(--danger)">$2.59M</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Generación Funnel 2026</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+        <div class="stat-mini">
+          <div class="stat-mini-label">Monto Creado</div>
+          <div class="stat-mini-val" style="color:var(--accent)">$3.4M</div>
+          <div class="stat-mini-sub" style="color:var(--ok)">▲ 2.6% LYTD</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-label"># Ops Creadas</div>
+          <div class="stat-mini-val">65</div>
+          <div class="stat-mini-sub" style="color:var(--ok)">▲ 27.5% LYTD</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-label">TKT Promedio</div>
+          <div class="stat-mini-val">$52.7K</div>
+          <div class="stat-mini-sub" style="color:var(--danger)">▼ vs $65.4K</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartFunnel"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Cobertura de Territorio</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center;margin-bottom:16px">
+        <div style="text-align:center">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-bottom:8px">COBERTURA YTD</div>
+          <div style="position:relative;width:110px;height:110px;margin:0 auto">
+            <canvas id="chartCobYTD"></canvas>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--ok)">78%</span>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-top:6px">25 / 32 cuentas</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-bottom:8px">COBERTURA Q ACT.</div>
+          <div style="position:relative;width:110px;height:110px;margin:0 auto">
+            <canvas id="chartCobQ"></canvas>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--danger)">19%</span>
+            </div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-top:6px">6 / 32 cuentas</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="summary-row"><span class="summary-key">Total Cuentas Territorio</span><span class="summary-val">33</span></div>
+      <div class="summary-row"><span class="summary-key">Nuevos Clientes 2026</span><span class="summary-val" style="color:var(--ok)">2</span></div>
+      <div class="summary-row"><span class="summary-key">Interacciones Comerciales</span><span class="summary-val">31</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- FUNNEL -->
+<div class="page" id="page-funnel">
+  <div class="section-title">Pipeline 2026</div>
+  <div class="section-sub">54 oportunidades abiertas · $5.2M total</div>
+
+  <div class="grid-3">
+    <div class="kpi-card neutral">
+      <div class="kpi-label">$ Monto Total Pipeline</div>
+      <div class="kpi-value dark" style="font-size:26px">$5.23M</div>
+      <div class="kpi-obj">Días prom. cierre ganadas: <span>23</span></div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="kpi-label">Win Rate Monto YTD</div>
+      <div class="kpi-value warn">16.8%</div>
+      <div class="kpi-obj">Histórico: <span>28%</span> · Obj: <span>25%</span></div>
+    </div>
+    <div class="kpi-card neutral">
+      <div class="kpi-label">Win Rate Cantidad YTD</div>
+      <div class="kpi-value dark">48%</div>
+      <div class="kpi-obj">Histórico: <span>48%</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Pipeline por Etapa</div>
+      <div class="chart-wrap-lg"><canvas id="chartEtapa"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Pipeline por FCST</div>
+      <div class="chart-wrap-lg"><canvas id="chartFCST"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Pipeline por EU/AM — Trimestral <span class="panel-badge">Q2-Q4 2026</span></div>
+    <table class="data-table">
+      <thead><tr><th>EU</th><th>AM</th><th>Q2</th><th>Q3</th><th>Q4</th><th>TOTAL</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Andina</td><td>Walter Cedrón Zárate</td>
+          <td style="font-family:'DM Mono',monospace">$1,525,899</td>
+          <td style="font-family:'DM Mono',monospace">$3,355,259</td>
+          <td style="font-family:'DM Mono',monospace">$350,000</td>
+          <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">$5,231,158</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Top Oportunidades <span class="panel-badge">por monto</span></div>
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Oportunidad</th><th>Cuenta</th><th>FCST</th><th>Cierre</th><th>Monto USD</th><th>Vendor</th></tr></thead>
+      <tbody id="tabla-oportunidades"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MIX -->
+<div class="page" id="page-mix">
+  <div class="section-title">Mix Tecnológico</div>
+  <div class="section-sub">Distribución por Vendor y Categoría · Cotizaciones y Booking</div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Cotizaciones por Marca <span class="panel-badge">$1.16M</span></div>
+      <div class="chart-wrap-lg"><canvas id="chartMixCot"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Booking por Marca <span class="panel-badge">$413K</span></div>
+      <div class="chart-wrap-lg"><canvas id="chartMixBkg"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Brecha Cisco vs Meta 80%</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding:8px 0">
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Cisco en Pipeline</div>
+        <div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--warn)">53%</div>
+        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:53%;background:var(--warn)"></div></div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px">Meta: 80% · Brecha: 27pp</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Cisco en Booking</div>
+        <div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--danger)">36%</div>
+        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:36%;background:var(--danger)"></div></div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px">Meta: 80% · Brecha: 44pp</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Cisco Adicional Requerido</div>
+        <div style="font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--accent)">$2.64M</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:12px">Para alcanzar meta 80% Cisco sobre cuota $3M</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING -->
+<div class="page" id="page-booking">
+  <div class="section-title">Booking 2026</div>
+  <div class="section-sub">Facturación cerrada · Seguimiento vs Plan</div>
+
+  <div class="grid-3">
+    <div class="kpi-card warn">
+      <div class="kpi-label">Booking YTD</div>
+      <div class="kpi-value warn" style="font-size:26px">$413,455</div>
+      <div class="kpi-obj">TKT Promedio: <span>$14,770</span></div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-label">Att Plan FY</div>
+      <div class="kpi-value danger" style="font-size:26px">▼ 1.6%</div>
+      <div class="kpi-obj">Att Plan YTD: <span>▼ 4.4%</span></div>
+    </div>
+    <div class="kpi-card neutral">
+      <div class="kpi-label">Margen Bruto</div>
+      <div class="kpi-value dark" style="font-size:26px">$77.5K</div>
+      <div class="kpi-obj">MB%: <span style="color:var(--warn)">18.7%</span> · Plan: <span>21%</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Evolución Mensual Booking 2026</div>
+    <div class="chart-wrap-lg"><canvas id="chartBookingMensual"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Cumplimiento de Cuotas AM</div>
+    <table class="data-table">
+      <thead><tr><th>AM</th><th>Q1 $Bkg</th><th>Q1 $Cuota</th><th>Q1 Att</th><th>Q2 $Bkg</th><th>Q2 $Cuota</th><th>Total $Bkg</th><th>Total Cuota</th><th>Att Total</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Walter Cedrón Zárate</td>
+          <td style="font-family:'DM Mono',monospace">$321,691</td>
+          <td style="font-family:'DM Mono',monospace">$600,000</td>
+          <td style="color:var(--warn);font-weight:600">54%</td>
+          <td style="font-family:'DM Mono',monospace">$91,764</td>
+          <td style="font-family:'DM Mono',monospace">$750,000</td>
+          <td style="font-family:'DM Mono',monospace">$413,455</td>
+          <td style="font-family:'DM Mono',monospace">$3,000,000</td>
+          <td style="color:var(--danger);font-family:'Syne',sans-serif;font-weight:700;font-size:16px">14%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SCOREBOARD -->
+<div class="page" id="page-scoreboard">
+  <div class="section-title">Scoreboard Cumplimiento</div>
+  <div class="section-sub">Resumen consolidado de performance vs objetivos</div>
+
+  <div class="panel">
+    <div class="scoreboard-row header">
+      <div>EU / AM</div><div>BKG FY</div><div>Cuota AMs</div><div>Att BKG</div>
+      <div>FtoF</div><div>Att FtoF</div><div>Commit</div><div>Factor X</div>
+    </div>
+    <div class="scoreboard-row">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">Walter Cedrón Z.</div>
+      <div class="s-val">$413,455</div>
+      <div class="s-val">$3,000,000</div>
+      <div class="s-pct" style="color:var(--danger)">14%</div>
+      <div class="s-val">$2,584,755</div>
+      <div class="s-pct" style="color:var(--warn)">86%</div>
+      <div class="s-val">$845,729</div>
+      <div class="s-pct" style="color:var(--warn)">20.61%</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Factor X — Pipeline Ponderado</div>
+      <div style="font-family:'Syne',sans-serif;font-size:52px;font-weight:800;letter-spacing:-2px;color:var(--warn)">20.61%</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:8px">
+        Commit: <strong style="color:var(--ok)">$845,729</strong> &nbsp;·&nbsp;
+        Strong P.: <strong style="color:var(--accent)">$1,108,785</strong> &nbsp;·&nbsp;
+        Upside P.: <strong style="color:var(--warn)">$216,786</strong>
+      </div>
+      <div class="divider"></div>
+      <div class="alert-box">
+        <div class="alert-icon">⚠</div>
+        <div>Pipeline ponderado en <strong>20.61%</strong>. Priorizar cierre de oportunidades Commit y Strong Upside para impactar cuota Q2-Q3.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Análisis GAP vs Cuota</div>
+      <div class="summary-row"><span class="summary-key">Cuota Anual</span><span class="summary-val">$3,000,000</span></div>
+      <div class="summary-row"><span class="summary-key">Booking YTD</span><span class="summary-val" style="color:var(--warn)">$413,455</span></div>
+      <div class="summary-row"><span class="summary-key">GAP Restante</span><span class="summary-val" style="color:var(--danger)">$2,586,545</span></div>
+      <div class="summary-row"><span class="summary-key">Pipeline Commit</span><span class="summary-val" style="color:var(--ok)">$845,729</span></div>
+      <div class="summary-row"><span class="summary-key">Pipeline Strong Upside</span><span class="summary-val" style="color:var(--accent)">$1,108,785</span></div>
+      <div class="summary-row"><span class="summary-key">GAP no cubierto</span><span class="summary-val" style="color:var(--danger)">$632,031</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE DETALLE -->
+<div class="page" id="page-pipeline">
+  <div class="section-title">Pipeline — Detalle Completo</div>
+  <div class="section-sub">Oportunidades abiertas · Ordenadas por monto</div>
+  <div class="panel" style="overflow-x:auto">
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Oportunidad</th><th>Cuenta</th><th>Etapa</th><th>FCST</th><th>Cierre</th><th>Semáforo</th><th>Monto USD</th><th>Vendor</th></tr></thead>
+      <tbody id="tabla-pipeline-body"></tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+
+<script>
+const DATA = {
+  oportunidades: [
+    {n:"RENOVACIÓN TECNOLÓGICA HIGH VOLUME PARTE II",c:"PLUSPETROL PERU",e:"3-Propuesta",f:"Strong Upside",ci:"28/08/2026",s:"A tiempo",m:350000,v:"HP inc."},
+    {n:"INFREAESTRUCTURA TECNOLÓGICA IT - HPE",c:"STATKRAFT PERU S.A.",e:"2-Calificación",f:"Commit",ci:"30/09/2026",s:"A tiempo",m:350000,v:"HPE"},
+    {n:"INFREAESTRUCTURA TECNOLÓGICA OT - HPE Y ARUBA",c:"STATKRAFT PERU S.A.",e:"3-Propuesta",f:"Strong Upside",ci:"31/10/2026",s:"A tiempo",m:350000,v:"HPE"},
+    {n:"ADQUISICIÓN DE INFRAESTRUCTURA SERVERS & STORAGE",c:"GOODYEAR",e:"3-Propuesta",f:"Strong Upside",ci:"30/06/2026",s:"A tiempo",m:350000,v:"HPE"},
+    {n:"RENOVACIÓN TECNOLÓGICA HIGH VOLUME PARTE I",c:"PLUSPETROL PERU",e:"3-Propuesta",f:"Strong Upside",ci:"30/06/2026",s:"Alerta",m:350000,v:"HP inc."},
+    {n:"EQUIPAMIENTO NETWORKING NUEVO EDIFICIO",c:"TELEPERFORMANCE",e:"3-Propuesta",f:"Commit",ci:"29/05/2026",s:"Alerta",m:350000,v:"Cisco"},
+    {n:"RENOVACIÓN TECNOLÓGICA NETWORKING",c:"GOODYEAR",e:"3-Propuesta",f:"Upside",ci:"31/07/2026",s:"A tiempo",m:250000,v:"Cisco"},
+    {n:"RENOVACIÓN TECNOLÓGICA SWITCHING",c:"COES-SINAC",e:"2-Calificación",f:"Upside",ci:"28/08/2026",s:"A tiempo",m:250000,v:"Cisco"},
+    {n:"RENOVACIÓN SERVICIO OUTSOURCING MESA DE AYUDA",c:"TOYOTA",e:"3-Propuesta",f:"Upside",ci:"31/07/2026",s:"A tiempo",m:250000,v:"BVS"},
+    {n:"RENOVACION DE GARANTIA CISCO",c:"LAP",e:"3-Propuesta",f:"Upside",ci:"30/09/2026",s:"A tiempo",m:200000,v:"Cisco"},
+    {n:"RENOVACIÓN TECNOLÓGICA INFRAESTRUCTURA",c:"TOYOTA",e:"2-Calificación",f:"Upside",ci:"30/09/2026",s:"A tiempo",m:200000,v:"HPE"},
+    {n:"RENOVACIÓN TECNOLÓGICA GREENLAKE",c:"CONSORCIO MINERO HORIZONTE",e:"3-Propuesta",f:"Upside",ci:"31/08/2026",s:"A tiempo",m:200000,v:"HPE"},
+    {n:"RENOVACION WIFI - ALMACEN",c:"YAMAHA PERU",e:"3-Propuesta",f:"Strong Upside",ci:"31/07/2026",s:"A tiempo",m:80000,v:"Cisco"},
+    {n:"AMPLIACIÓN SERVICIO NOC REGIONAL",c:"SMI",e:"3-Propuesta",f:"Upside",ci:"31/08/2026",s:"A tiempo",m:80000,v:"BVS"},
+    {n:"INFRAESTRUCTURA PROYECTO DR - DELL",c:"KALLPA",e:"3-Propuesta",f:"Strong Upside",ci:"30/09/2026",s:"A tiempo",m:80000,v:"Dell"},
+    {n:"RENOVACIÓN TECNOLÓGICA SITE CONTINGENCIA",c:"QUALITAS",e:"2-Calificación",f:"Commit",ci:"31/08/2026",s:"A tiempo",m:120000,v:"HPE"},
+    {n:"ARRENDAMIENTO TABLETS SAMSUNG - 3 AÑOS",c:"TEXTIL DEL VALLE",e:"3-Propuesta",f:"Upside",ci:"30/06/2026",s:"A tiempo",m:128890,v:"Otros"},
+    {n:"EQUIPAMIENTO ROUTER PARA LAN EXTENDIDA",c:"COES-SINAC",e:"3-Propuesta",f:"Upside",ci:"29/05/2026",s:"Alerta",m:150000,v:"Cisco"},
+  ]
+};
+
+document.getElementById('fecha-actual').textContent = new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'});
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  setTimeout(()=>initCharts(id), 60);
+}
+
+function buildTablas() {
+  const sorted = [...DATA.oportunidades].sort((a,b)=>b.m-a.m);
+  document.getElementById('tabla-oportunidades').innerHTML = sorted.slice(0,10).map((o,i)=>`
+    <tr>
+      <td style="color:var(--text3);font-family:'DM Mono',monospace">${i+1}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.n}">${o.n}</td>
+      <td style="font-weight:500">${o.c}</td>
+      <td><span class="fcst ${o.f==='Commit'?'commit':o.f.includes('Strong')?'strong':'upside'}">${o.f}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${o.ci}</td>
+      <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">$${o.m.toLocaleString()}</td>
+      <td><span class="vendor ${o.v==='Cisco'?'cisco':o.v==='HPE'||o.v==='HP inc.'?'hpe':'other'}">${o.v}</span></td>
+    </tr>`).join('');
+
+  document.getElementById('tabla-pipeline-body').innerHTML = sorted.map((o,i)=>`
+    <tr>
+      <td style="color:var(--text3);font-family:'DM Mono',monospace">${i+1}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.n}</td>
+      <td>${o.c}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text2)">${o.e}</td>
+      <td><span class="fcst ${o.f==='Commit'?'commit':o.f.includes('Strong')?'strong':'upside'}">${o.f}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${o.ci}</td>
+      <td style="text-align:center"><span class="semaforo ${o.s.includes('Alerta')?'alerta':'tiempo'}"></span></td>
+      <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">$${o.m.toLocaleString()}</td>
+      <td><span class="vendor ${o.v==='Cisco'?'cisco':o.v==='HPE'||o.v==='HP inc.'?'hpe':'other'}">${o.v}</span></td>
+    </tr>`).join('');
+}
+
+const CI = {};
+
+function dc(id) { if(CI[id]) { CI[id].destroy(); delete CI[id]; } }
+
+function initCharts(page) {
+  const light = { grid:'#e2e6f0', tick:'#a0aec0' };
+
+  if(page==='kpis') {
+    // no charts needed
+  }
+
+  if(page==='resumen') {
+    dc('chartCobYTD'); dc('chartCobQ'); dc('chartFunnel');
+    CI['chartCobYTD'] = new Chart(document.getElementById('chartCobYTD'),{
+      type:'doughnut',
+      data:{labels:['Cubierto','No cubierto'],datasets:[{data:[78,22],backgroundColor:['#0e7c5a','#e2e6f0'],borderWidth:0}]},
+      options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},responsive:true,maintainAspectRatio:false}
+    });
+    CI['chartCobQ'] = new Chart(document.getElementById('chartCobQ'),{
+      type:'doughnut',
+      data:{labels:['Cubierto','No cubierto'],datasets:[{data:[19,81],backgroundColor:['#c0392b','#e2e6f0'],borderWidth:0}]},
+      options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},responsive:true,maintainAspectRatio:false}
+    });
+    CI['chartFunnel'] = new Chart(document.getElementById('chartFunnel'),{
+      type:'bar',
+      data:{labels:['Ene','Feb','Mar','Abr'],datasets:[{data:[1005137,1195695,696096,413455],backgroundColor:'#1a56db99',borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:light.grid},ticks:{color:light.tick,font:{family:'DM Mono',size:10}}},
+                y:{grid:{color:light.grid},ticks:{color:light.tick,font:{family:'DM Mono',size:10},callback:v=>'$'+Math.round(v/1000)+'K'}}}}
+    });
+  }
+
+  if(page==='funnel') {
+    dc('chartEtapa'); dc('chartFCST');
+    CI['chartEtapa'] = new Chart(document.getElementById('chartEtapa'),{
+      type:'bar',
+      data:{labels:['4-Negociación','3-Propuesta','2-Calificación'],
+            datasets:[{data:[0,5000000,1000000],backgroundColor:['#0e7c5a99','#1a56db99','#b4530999'],borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:light.grid},ticks:{color:light.tick,font:{family:'DM Mono',size:10},callback:v=>'$'+Math.round(v/1000000*10)/10+'M'}},
+                y:{grid:{display:false},ticks:{color:light.tick,font:{family:'DM Mono',size:11}}}}}
+    });
+    CI['chartFCST'] = new Chart(document.getElementById('chartFCST'),{
+      type:'bar',
+      data:{labels:['Commit','Strong Upside','Upside'],
+            datasets:[{data:[845729,2220000,2170000],backgroundColor:['#0e7c5a99','#1a56db99','#b4530999'],borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:light.grid},ticks:{color:light.tick,font:{family:'DM Mono',size:10},callback:v=>'$'+Math.round(v/1000000*10)/10+'M'}},
+                y:{grid:{display:false},ticks:{color:light.tick,font:{family:'DM Mono',size:11}}}}}
+    });
+  }
+
+  if(page==='mix') {
+    dc('chartMixCot'); dc('chartMixBkg');
+    CI['chartMixCot'] = new Chart(document.getElementById('chartMixCot'),{
+      type:'doughnut',
+      data:{labels:['Cisco','HPE/HP','(En blanco)','Dell','Otros'],
+            datasets:[{data:[609000,322000,175000,42000,12000],backgroundColor:['#0067a0','#00735a','#94a3b8','#f59e0b','#64748b'],borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#4a5568',font:{family:'DM Mono',size:10},boxWidth:10,padding:10}}}}
+    });
+    CI['chartMixBkg'] = new Chart(document.getElementById('chartMixBkg'),{
+      type:'doughnut',
+      data:{labels:['Cisco','HPE/HP','BVS','Otros'],
+            datasets:[{data:[147000,214000,4000,48000],backgroundColor:['#0067a0','#00735a','#c0392b','#64748b'],borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#4a5568',font:{family:'DM Mono',size:10},boxWidth:10,padding:10}}}}
+    });
+  }
+
+  if(page==='booking') {
+    dc('chartBookingMensual');
+    CI['chartBookingMensual'] = new Chart(document.getElementById('chartBookingMensual'),{
+      type:'bar',
+      data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+            datasets:[{label:'Booking YTD',data:[0,160000,130000,140000,0,0,0,0,0,0,0,0],backgroundColor:'#1a56db99',borderRadius:4},
+                       {label:'Proyectado',data:[0,0,0,0,280000,210000,0,0,0,0,0,0],backgroundColor:'#e2e6f0',borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#4a5568',font:{family:'DM Mono',size:10}}}},
+        scales:{x:{grid:{color:light.grid},ticks:{color:light.tick,font:{family:'DM Mono',size:10}}},
+                y:{grid:{color:light.grid},ticks:{color:light.tick,font:{family:'DM Mono',size:10},callback:v=>'$'+Math.round(v/1000)+'K'}}}}
+    });
+  }
+}
+
+buildTablas();
+initCharts('kpis');
+</script>
+</body>
+</html>
